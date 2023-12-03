@@ -16,11 +16,15 @@ export type Config = {
       endpoint: string;
       model: string;
       apiKey: string;
+      temperature: number;
     };
     code: {
       gitDiffOArgs?: string;
       projectSlug?: string;
       repoSlug?: string;
+      sourceBranch?: string;
+      targetBranch?: string;
+      prId?: string;
     }
     review: {
       prompt: string;

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command, Argument } from "commander";
+import { Argument, Command } from "commander";
 import { runCRGPTCLI } from "../lib";
 import { prepareConfig } from "./config";
 import { initCRGPT } from "./init";
@@ -30,6 +30,7 @@ program
   .option("-c, --config [config]", "Config file path", ".crgpt.yml")
   .action(async (action: string, options: CrGPTCLIOptions) => {
     try {
+    
       const {
         prId,
         source: sourceBranch,
@@ -43,10 +44,13 @@ program
           break;
         case "review":
           const config = await prepareConfig(configPath, options);
-          if (!sourceBranch || !targetBranch) {
+          const source = config.code.sourceBranch || sourceBranch;
+          const target = config.code.targetBranch || targetBranch;
+          if (!source || !target) {
             throw new Error("Please provide source and target branch names");
           }
-          await runCRGPTCLI({ sourceBranch, targetBranch, prId }, config);
+          const opt = { sourceBranch: source, targetBranch: target, prId };
+          await runCRGPTCLI(opt, config);
           break;
         case "diff":
           throw new Error("Not implemented");

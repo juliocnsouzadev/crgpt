@@ -1,5 +1,10 @@
 
-import fetch from 'node-fetch';
+import OpenAI from "openai";
+import { postCommentToBitbucketPR } from './bitbucket';
+import { generateDiffs } from './git';
+import { postCommentToGithubPR } from './github';
+import { writeCodeReviewToFile } from './markdown';
+import { printCodeReviewToConsole } from './stdout';
 import {
   Config,
   Diff,
@@ -7,12 +12,10 @@ import {
   ReviewSumary,
   runCRGPTOptions,
 } from './types';
-import { postCommentToBitbucketPR } from './bitbucket';
-import { postCommentToGithubPR } from './github';
-import { writeCodeReviewToFile } from './markdown';
-import { printCodeReviewToConsole } from './stdout';
-import { generateDiffs } from './git';
 
+const tokenLimits : { [key: string]: number } ={
+  'gpt-3.5-turbo': 4096,
+}
 
 async function postDiffToEndpoint(
   diffData: string,
@@ -28,31 +31,32 @@ async function postDiffToEndpoint(
   const checklist = config.review.checklist;
   const summary = config.review.summary;
   const prompt = promptTml.replace('{checklist}', checklist).replace('{output}', summary);
-
-  const response = await fetch(endpointUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: config.openai.model || 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: prompt,
-        },
-        {
-          role: 'user',
-          content: diffData,
-        },
-      ],
-    }),
+  const openai = new OpenAI({
+    apiKey: apiKey,
   });
-  if (!response.ok) {
-    throw new Error(`Error posting diff to endpoint: ${response.statusText}`);
+  const model = config.openai.model || 'gpt-3.5-turbo';
+  const limit = tokenLimits[model] || 4096;
+  const maxTokens = limit - prompt.length
+  const response = await openai.chat.completions.create({
+    model: model,
+    messages: [
+      {
+        role: 'system',
+        content: prompt,
+      },
+      {
+        role: 'user',
+        content: diffData,
+      },
+    ],
+    temperature: 0.7,
+    max_tokens: maxTokens,
+  });
+
+  if (!response.id) {
+    throw new Error(`Error posting diff to endpoint: ${response}`);
   }
-  const data = await response.json();
+  const data = await response;
   const { choices } = data as { choices: { message: { content: string } }[] };
   const { message } = choices[0];
   const { content } = message;

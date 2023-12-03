@@ -1,5 +1,5 @@
-import yaml from "js-yaml";
 import { promises as fs } from "fs";
+import yaml from "js-yaml";
 import { Config } from "../lib/types";
 import { CrGPTCLIOptions } from "./types";
 
@@ -49,6 +49,7 @@ const DEFAULT_CONFIG: Config = {
     endpoint: "https://api.openai.com/v1/chat/completions",
     model: "gpt-3.5-turbo",
     apiKey: "",
+    temperature: 0.7,
   },
   code: {
     gitDiffOArgs: "",
@@ -93,7 +94,6 @@ export async function prepareConfig(
   if (await fileExists(configFile)) {
     config = await readConfig(configFile);
   }
-
   if(options.output) {
     config.output = options.output;
   }
