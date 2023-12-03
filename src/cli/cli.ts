@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { Command, Argument } from 'commander';
-import { runCRGPT, runCRGPTCLI } from '../lib';
+import { Argument, Command } from 'commander';
+import { runCRGPT } from '../lib';
 import { readConfig } from './config';
 import { initCRGPT } from './init';
 import { CrGPTCLIOptions } from './types';
